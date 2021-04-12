@@ -1,0 +1,14 @@
+FROM performer_base
+ADD modelling_dual_encoder.py /workspace/modelling_dual_encoder.py
+ADD ./preprocessing.py /workspace/preprocessing.py
+ADD ./utils.py /workspace/utils.py
+ADD ./ds_config.json /workspace/ds_config.json
+ADD ./setup.py /workspace/setup.py
+ADD ./training.py /workspace/training.py
+ADD ./evaluation.py /workspace/evaluation.py
+ADD ./training_huggingface.py /workspace/training_huggingface.py
+ADD lamb.py /workspace/lamb.py
+ADD ./run.sh /workspace/run.sh
+WORKDIR /
+EXPOSE 6006
+ENTRYPOINT ["bash","/workspace/run.sh"]

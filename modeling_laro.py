@@ -4,20 +4,26 @@ from transformers.modeling_outputs import Seq2SeqLMOutput, BaseModelOutputWithPo
 from transformers import EncoderDecoderModel, RobertaModel, XLMRobertaModel, XLMRobertaTokenizer
 from torch.nn.functional import normalize
 
-from train_utils import AMSLoss, compute_loss
+from train_utils import cosine_embedding_loss
 
 
 class LARO(XLMRobertaModel):
 
     def prepare_freezed_forward(self):
         for m in self.named_parameters():
-            if "layer" in m[0].lower() and "embeddings" not in m[0].lower():
-                num_layers = m[0].lower().split(".")[3]
+            x = m[0].lower().split(".")[2]
+            if ".layer." in m[0].lower():
+                num_layers = x
+            else:
+                continue
+
         for m in self.named_parameters():
+            # print(m[0])
             if "embeddings" in m[0].lower():
                 m[1].requires_grad = False
-            if "norm" in m[0].lower() or "layer.0" in m[0].lower() or "layer." + str(
-                    num_layers) in m[0].lower():
+            elif "pooler" in m[0].lower() or "norm" in m[0].lower() or "layer." + str(
+                    num_layers) in m[0].lower() or "layer.0" in m[0].lower() or "output" in m[0].lower():
+                # print(m[0])
                 m[1].requires_grad = True
             else:
                 m[1].requires_grad = False
@@ -64,19 +70,15 @@ class LARO(XLMRobertaModel):
         self.prepare_freezed_forward()
 
         scaling_factor = 10
+        #
+        output_1 = super(LARO, self).forward(input_ids=input_ids, attention_mask=attention_mask)
+        output_2 = super(LARO, self).forward(input_ids=decoder_input_ids,
+                                             attention_mask=decoder_attention_mask)
 
-        output_1 = torch.mul(scaling_factor,normalize(super(LARO, self).forward(input_ids=input_ids,
-                                             attention_mask=attention_mask).last_hidden_state[:, 0, :]))
+        loss = cosine_embedding_loss(torch.mul(scaling_factor, normalize(output_1.pooler_output)),
+                                     torch.mul(scaling_factor, normalize(output_2.pooler_output)), m=0)
 
-        output_2 = torch.mul(scaling_factor,normalize(super(LARO, self).forward(input_ids=decoder_input_ids,
-                                             attention_mask=decoder_attention_mask).last_hidden_state[:, 0, :]))
-
-        loss = compute_loss(output_1, output_2)
-
-        print(loss.item())
-
-        return (loss,)
-
+        return loss, normalize(output_1.pooler_output)
 
     @torch.no_grad()
     def get_embedding(self, input_ids=None, attention_mask=None) -> torch.Tensor:
@@ -87,7 +89,7 @@ class LARO(XLMRobertaModel):
         :return: Tensor -> Embeddings
         """
         encoder_outputs = super(LARO, self).forward(input_ids=input_ids,
-                                                    attention_mask=attention_mask).last_hidden_state[:, 0, :]
+                                                    attention_mask=attention_mask).pooler_output
         return normalize(encoder_outputs)
 
 
@@ -101,9 +103,3 @@ if __name__ == "__main__":
                           return_tensors="pt", padding=True)
     outputs = model(input_ids=input_ids["input_ids"], decoder_input_ids=input_ids["input_ids"],
                     attention_mask=input_ids["attention_mask"], decoder_attention_mask=input_ids["attention_mask"])
-    # training
-
-    # save and load from pretrained
-    # model.save_pretrained("bert2bert")
-    # model = EncoderDecoderModel.from_pretrained("bert2bert")
-    # generation

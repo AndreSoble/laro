@@ -1,4 +1,5 @@
 FROM pytorch/pytorch:1.7.0-cuda10.1-cudnn7-runtime
 RUN apt update -y && apt install g++ -y
-ADD requirements.txt /workspace/requirements.txt
+ADD requirements.txt /requirements.txt
+ADD v1 /v1
 RUN pip install -r requirements.txt

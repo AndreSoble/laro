@@ -9,13 +9,13 @@ import requests
 import torch
 
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Tuple, Optional, Union, Dict, Any
 
 from torch import cosine_similarity
 from torch.nn.functional import normalize
-from torch.nn.modules.loss import _Loss
+from torch.nn.modules.loss import _Loss, CosineEmbeddingLoss
 from tqdm import tqdm
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, Trainer
 from pprint import pprint
 from torch.utils.data import Dataset
 
@@ -213,23 +213,20 @@ class Corpus:
         print(f"Not perfect precise amount of training data is {general_counter}")
 
 
-tokenizer_encoder = AutoTokenizer.from_pretrained(os.environ.get("PRETRAINED_MODEL_AND_TOKENIZER", "xlm-roberta-base"))
-tokenizer_decoder = AutoTokenizer.from_pretrained(
-    os.environ.get("PRETRAINED_MODEL_AND_TOKENIZER", "bert-base-multilingual-cased"))
+tokenizer_encoder = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
 
 def data_collector(batch_of_sentences):
-    global tokenizer_encoder, tokenizer_decoder
+    global tokenizer_encoder
     encoder_input = tokenizer_encoder(
         [s.get_source() for s in batch_of_sentences],
         add_special_tokens=True, padding=True, truncation=True, max_length=64, return_tensors="pt")
-    decoder_input = tokenizer_decoder(
+    decoder_input = tokenizer_encoder(
         [s.get_target() for s in batch_of_sentences],
         add_special_tokens=True, padding=True, truncation=True, max_length=64, return_tensors="pt")
     return {"input_ids": encoder_input["input_ids"],
             "attention_mask": encoder_input["attention_mask"],
             "decoder_input_ids": decoder_input["input_ids"],
-            # "labels": decoder_input["input_ids"],
             "decoder_attention_mask": decoder_input["attention_mask"]}
 
 
@@ -241,60 +238,39 @@ class DataLoader(Dataset):
         return len(self.items)
 
     def __getitem__(self, idx):
+        if idx == 0:
+            shuffle(self.items)
         return self.items[idx]
 
 
-class AMSLoss(_Loss):
-    def __init__(self, m=0.35):
-        super(AMSLoss, self).__init__()
-        self.margin = m
-        self.cosine_similarity = torch.nn.CosineSimilarity()
+def cosine_embedding_loss(x: torch.FloatTensor, y: torch.FloatTensor, m=0.35):
+    loss_func = CosineEmbeddingLoss(margin=m)
+    true_loss = loss_func(x, y, torch.ones(x.size(0)).to(x.device))
 
-    def rank(self, x: torch.FloatTensor, y: torch.FloatTensor):
-
-        N = x.size()[0]
-        ret = torch.zeros(N).to(x.device)
-        similarities = self.cosine_similarity(x, y)
-
-        for i in range(N):
-            xxx = torch.zeros(N - 1).to(x.device)
-            negative_samples_similarities_exp = [self.cosine_similarity(x[i].unsqueeze(0), y[n].unsqueeze(0)) for n in
-                                                 range(N) if n != i]
-            for idx in range(N - 1):
-                xxx[idx] = negative_samples_similarities_exp[idx]
-            negative_samples_similarities_exp = torch.exp(xxx)
-            negative_samples_similarities_exp = torch.sum(negative_samples_similarities_exp)
-            m1 = torch.exp(torch.sub(similarities[i], self.margin))
-            m2 = torch.exp(torch.sub(similarities[i], self.margin))
-            ret[i] = torch.div(m1, torch.add(m2, negative_samples_similarities_exp))
-
-        return torch.mul(-1 / N, torch.sum(ret))
-
-    def forward(self, x: torch.FloatTensor, y: torch.FloatTensor, one_direction=False):
-        if not one_direction:
-            return torch.add(self.rank(x, y), self.rank(y, x))  # self.rank(x, y)#
-        else:
-            return self.rank(x, y)
+    neg_loss = torch.cat(([compute_negative_loss(x[n], y, n, m).unsqueeze(0) for n in range(x.size(0))])).mean()
+    return true_loss + neg_loss
 
 
-def compute_loss(x: torch.FloatTensor, y: torch.FloatTensor, m=0.3):
-    return torch.add(compute_loss_one_direction(x, y, m=m), compute_loss_one_direction(y, x, m=m))
-
-
-def compute_loss_one_direction(x: torch.FloatTensor, y: torch.FloatTensor, m=0.3):
-    N = x.size()[0]
-
-    x_y_sim = torch.exp(torch.sub(cosine_similarity(x, y), m))
-    ret = torch.zeros_like(x_y_sim)
-    for i in range(N):
-        ret[i] = torch.div(x_y_sim[i], torch.add(x_y_sim[i], compute_negative_sum(x[i], y, i)))
-    return torch.mul(torch.div(-1, N), torch.sum(ret))
-
-
-def compute_negative_sum(x: torch.FloatTensor, y: torch.FloatTensor, i: int):
+def compute_negative_loss(x: torch.FloatTensor, y: torch.FloatTensor, i: int, m=0.35):
+    loss_func = CosineEmbeddingLoss(margin=m)
     y1 = y[torch.arange(y.size(0)) != i]
     N = y1.size()[0]
-    ret = torch.zeros_like(y1)
-    for n in range(N):
-        ret[n] = cosine_similarity(y1[n].unsqueeze(0), x.unsqueeze(0))
-    return torch.sum(torch.exp(ret))
+    x1 = torch.cat([x.unsqueeze(0) for _ in range(N)])
+    return loss_func(y1, x1, -1 * torch.ones(N).to(y1.device)).mean()
+
+
+class CustomTrainer(Trainer):
+    def prediction_step(
+            self,
+            model: torch.nn.Module,
+            inputs: Dict[str, Union[torch.Tensor, Any]],
+            prediction_loss_only: bool,
+            ignore_keys: Optional[List[str]] = None,
+    ) -> Tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]:
+        inputs = self._prepare_inputs(inputs)
+
+        with torch.no_grad():
+            loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
+            loss = loss.mean().detach()
+
+        return (loss, None, None)

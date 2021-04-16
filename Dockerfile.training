@@ -1,6 +1,6 @@
 FROM laro_base
-ADD modeling_laro.py /modeling_laro
-ADD train.py /train.py
-ADD train_utils /train_utils
-ADD run_tatoeba.py /run_tatoeba.py
+ADD ./modeling_laro.py /modeling_laro
+ADD ./train.py /train.py
+ADD ./train_utils /train_utils
+ADD ./run_tatoeba.py /run_tatoeba.py
 ENTRYPOINT ["python","train.py"]

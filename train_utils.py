@@ -186,6 +186,13 @@ class Corpus:
             with ThreadPoolExecutor(max_workers=6) as executor:
                 executor.map(self.load_parallel, threadpool_input)
 
+    def get_data_counts(self):
+        if not self.train or not self.dev or not self.eval:
+            return
+        return {"trainCount": len(self.train),
+                "devCount": len(self.dev),
+                "evalCount": len(self.eval)}
+
     def get_stats(self, path="./storage"):
         print("Computing stats...")
         assert os.path.isdir(path + "/opus-100-corpus/v1.0/supervised")
@@ -197,7 +204,7 @@ class Corpus:
             for file in os.listdir(data_folder_path + "/" + folder):
                 if "train" not in file and ".en" not in file:
                     continue
-                file = open(data_folder_path + "/" + folder + "/" + file)
+                file = open(data_folder_path + "/" + folder + "/" + file, "utf-8")
                 for s1 in file.readlines():
                     if len(s1) < 2:
                         continue

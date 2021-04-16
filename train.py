@@ -1,6 +1,6 @@
 import torch
 import warnings
-
+from pprint import pprint
 import wandb
 from torch.optim import Adam
 from tqdm import tqdm
@@ -16,9 +16,9 @@ wandb.login()
 warnings.filterwarnings("ignore")
 
 assert download_and_extract(path=os.environ.get("DATA_DIR", "./storage"))
-corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
-                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 200)))
-corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
+corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 0))),
+                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 10000)))
+corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 0))), path=os.environ.get("DATA_DIR", "./storage"))
 
 train_dataset = DataLoader(corpus.get_train(shuffled=True))
 test_dataset = DataLoader(corpus.get_dev() + corpus.get_eval())

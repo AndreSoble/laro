@@ -21,8 +21,7 @@ corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
 corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
 
 train_dataset = DataLoader(corpus.get_train(shuffled=True))
-test_dataset = DataLoader(corpus.get_dev())
-eval_dataset = DataLoader(corpus.get_eval())
+test_dataset = DataLoader(corpus.get_dev() + corpus.get_eval())
 
 model = LARO.from_pretrained('xlm-roberta-base')
 training_args = TrainingArguments(

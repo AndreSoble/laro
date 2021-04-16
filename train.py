@@ -16,12 +16,14 @@ wandb.login()
 warnings.filterwarnings("ignore")
 
 assert download_and_extract(path=os.environ.get("DATA_DIR", "./storage"))
-corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 0))),
-                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 10000)))
-corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 0))), path=os.environ.get("DATA_DIR", "./storage"))
+corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
+                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 100)))
+corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
 
 train_dataset = DataLoader(corpus.get_train(shuffled=True))
 test_dataset = DataLoader(corpus.get_dev() + corpus.get_eval())
+
+pprint(corpus.get_data_counts())
 
 model = LARO.from_pretrained('xlm-roberta-base')
 training_args = TrainingArguments(
@@ -34,12 +36,12 @@ training_args = TrainingArguments(
     logging_steps=int(os.environ.get("STEPS", 1000)),
     logging_dir=os.environ.get("LOG_DIR", './logs'),
     learning_rate=float(os.environ.get("LR", 5e-5)),
-    # fp16=torch.cuda.is_available(),
+    fp16=True,
     evaluation_strategy=EvaluationStrategy.EPOCH,
     save_total_limit=5,
     prediction_loss_only=True,
     report_to='wandb',  # enable logging to W&B
-    run_name=os.environ.get("RUN_NAME", 'laro_training123'),  # name of the W&B run (optional),
+    run_name=os.environ.get("RUN_NAME", 'laro_training_deepspeedtest'),  # name of the W&B run (optional),
 )
 
 trainer = CustomTrainer(

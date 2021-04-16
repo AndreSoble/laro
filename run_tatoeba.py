@@ -13,7 +13,6 @@ from modeling_laro import LARO
 from train_utils import device
 
 
-
 @torch.no_grad()
 def embed_labse(sentences: List[str]):
     print("Embedding using LABSE")
@@ -88,9 +87,6 @@ def evaluate(model):
         pprint(lang_counter)
     print("#" * 100)
     pprint(lang_counter)
-
-
-
 
 
 if __name__ == "__main__":

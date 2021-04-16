@@ -16,9 +16,9 @@ wandb.login()
 warnings.filterwarnings("ignore")
 
 assert download_and_extract(path=os.environ.get("DATA_DIR", "./storage"))
-corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 0))),
-                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 10)))
-corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 0))), path=os.environ.get("DATA_DIR", "./storage"))
+corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
+                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 200)))
+corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
 
 train_dataset = DataLoader(corpus.get_train(shuffled=True))
 test_dataset = DataLoader(corpus.get_dev())
@@ -27,9 +27,9 @@ eval_dataset = DataLoader(corpus.get_eval())
 model = LARO.from_pretrained('xlm-roberta-base')
 training_args = TrainingArguments(
     output_dir=os.environ.get("OUTPUT_DIR", './results'),  # output directory
-    num_train_epochs=int(os.environ.get("EPOCHS", 5)),  # total # of training epochs
-    per_device_train_batch_size=int(os.environ.get("PER_DEVICE_BATCH_SIZE", 40)),
-    per_device_eval_batch_size=int(os.environ.get("PER_DEVICE_EVAL_BATCH_SIZE", 40)),  # batch size for evaluation
+    num_train_epochs=int(os.environ.get("EPOCHS", 1)),  # total # of training epochs
+    per_device_train_batch_size=int(os.environ.get("PER_DEVICE_BATCH_SIZE", 30)),
+    per_device_eval_batch_size=int(os.environ.get("PER_DEVICE_EVAL_BATCH_SIZE", 30)),  # batch size for evaluation
     warmup_steps=int(os.environ.get("STEPS", 1000)),
     save_steps=int(os.environ.get("STEPS", 1000)),
     logging_steps=int(os.environ.get("STEPS", 1000)),
@@ -40,8 +40,7 @@ training_args = TrainingArguments(
     save_total_limit=5,
     prediction_loss_only=True,
     report_to='wandb',  # enable logging to W&B
-    run_name=os.environ.get("RUN_NAME", 'laro_training'),  # name of the W&B run (optional),
-    load_best_model_at_end=True
+    run_name=os.environ.get("RUN_NAME", 'laro_training123'),  # name of the W&B run (optional),
 )
 
 trainer = CustomTrainer(
@@ -53,4 +52,5 @@ trainer = CustomTrainer(
 )
 
 output = trainer.train()
+
 wandb.finish()

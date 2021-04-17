@@ -62,12 +62,11 @@ def tp_fp_eval(embedding: FloatTensor, embeddings: FloatTensor, index: int) -> s
         return "fp"
 
 
-def evaluate(model):
+def evaluate(model_mode):
     """
-    :param model: "labse" or "laro"
+    :param model_mode: "labse" or "laro"
     :return:
     """
-    model.eval()
     files = os.listdir("./v1")
 
     lang_counter = dict()
@@ -78,8 +77,8 @@ def evaluate(model):
         source_sentences = open("./v1/" + files[i], encoding="utf8").readlines()
         target_sentences = open("./v1/" + files[i + 1], encoding="utf8").readlines()
         counter = Counter()
-        source_embeddings = embed_labse(source_sentences) if model == "labse" else embed_laro(source_sentences)
-        target_embeddings = embed_labse(target_sentences) if model == "labse" else embed_laro(target_sentences)
+        source_embeddings = embed_labse(source_sentences) if model_mode == "labse" else embed_laro(source_sentences)
+        target_embeddings = embed_labse(target_sentences) if model_mode == "labse" else embed_laro(target_sentences)
         for index, sentence in enumerate(source_sentences):
             counter[tp_fp_eval(source_embeddings[index], target_embeddings, index)] += 1
         lang_counter[files[i].split(".")[1]] = counter
@@ -90,17 +89,8 @@ def evaluate(model):
 
 
 if __name__ == "__main__":
-    checkpoints = os.listdir(os.environ.get("OUTPUT_DIR", './results'))
-    n = ""
-    x = 0.0
-    for c in checkpoints:
-        m = c.split("-")[1]
-        if float(m) > x:
-            n = c
-            x = float(m)
-
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + str(n)).to(device)
+    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "fourth-model").to(device)
     model.eval()
     evaluate("laro")
 

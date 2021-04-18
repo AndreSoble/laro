@@ -75,10 +75,10 @@ class LARO(XLMRobertaModel):
         output_2 = super(LARO, self).forward(input_ids=decoder_input_ids,
                                              attention_mask=decoder_attention_mask)
 
-        #loss = cosine_embedding_loss(torch.mul(scaling_factor, normalize(output_1.pooler_output)),
-        #                             torch.mul(scaling_factor, normalize(output_2.pooler_output)), m=0)
+        loss = cosine_embedding_loss(torch.mul(scaling_factor, normalize(output_1.pooler_output)),
+                                     torch.mul(scaling_factor, normalize(output_2.pooler_output)), m=0)
 
-        return None, scaling_factor * normalize(output_1.pooler_output), scaling_factor * normalize(output_1.pooler_output)
+        return loss, normalize(output_1.pooler_output)
 
     @torch.no_grad()
     def get_embedding(self, input_ids=None, attention_mask=None) -> torch.Tensor:

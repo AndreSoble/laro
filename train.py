@@ -6,7 +6,7 @@ from pprint import pprint
 
 from torch.autograd import profiler
 
-import wandb
+
 from torch.optim import Adam
 from tqdm import tqdm
 from random import shuffle
@@ -16,7 +16,14 @@ from transformers.trainer_utils import EvaluationStrategy
 from modeling_laro import LARO
 from train_utils import *
 
-wandb.login()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--local_rank", type=int)
+args = parser.parse_args()
+
+if args.local_rank == 0:
+    import wandb
+    wandb.login()
 
 warnings.filterwarnings("ignore")
 
@@ -29,9 +36,7 @@ train_dataset = DataLoader(corpus.get_train(shuffled=True))
 test_dataset = DataLoader(corpus.get_dev() + corpus.get_eval())
 
 pprint(corpus.get_data_counts())
-parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", type=int)
-args = parser.parse_args()
+
 model = LARO.from_pretrained('xlm-roberta-base')
 training_args = TrainingArguments(
     output_dir=os.environ.get("OUTPUT_DIR", './results'),  # output directory
@@ -47,8 +52,8 @@ training_args = TrainingArguments(
     evaluation_strategy=EvaluationStrategy.STEPS,
     save_total_limit=3,
     prediction_loss_only=True,
-    report_to='wandb',  # enable logging to W&B
-    run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test'),  # name of the W&B run (optional),
+    report_to='wandb' if args.local_rank == 0 else None,  # enable logging to W&B
+    run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test') if args.local_rank == 0 else None,  # name of the W&B run (optional),
     sharded_ddp=True,
     local_rank=args.local_rank
 )
@@ -62,5 +67,5 @@ trainer = CustomTrainer(
 )
 
 output = trainer.train()
-
-wandb.finish()
+if args.local_rank == 0:
+    wandb.finish()

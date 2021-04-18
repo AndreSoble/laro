@@ -1,3 +1,5 @@
+import argparse
+
 import torch
 import warnings
 from pprint import pprint
@@ -23,12 +25,13 @@ corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
                 downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 1000)))
 corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
 
-
 train_dataset = DataLoader(corpus.get_train(shuffled=True))
 test_dataset = DataLoader(corpus.get_dev() + corpus.get_eval())
 
 pprint(corpus.get_data_counts())
-
+parser = argparse.ArgumentParser()
+parser.add_argument("--local_rank", type=int)
+args = parser.parse_args()
 model = LARO.from_pretrained('xlm-roberta-base')
 training_args = TrainingArguments(
     output_dir=os.environ.get("OUTPUT_DIR", './results'),  # output directory
@@ -46,7 +49,8 @@ training_args = TrainingArguments(
     prediction_loss_only=True,
     report_to='wandb',  # enable logging to W&B
     run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test'),  # name of the W&B run (optional),
-    sharded_ddp=True
+    sharded_ddp=True,
+    local_rank=args.local_rank
 )
 
 trainer = CustomTrainer(

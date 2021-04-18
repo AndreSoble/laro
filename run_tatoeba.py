@@ -91,17 +91,19 @@ def evaluate(model_mode):
 
 
 if __name__ == "__main__":
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "checkpoint-17000").to(device)
+    model.eval()
+    counter = evaluate("laro")
+    json.dump(counter, open("./laro_tatoeba.json", "w"))
 
+    exit()
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
     model = AutoModel.from_pretrained("sentence-transformers/LaBSE").to(device)
     model.eval()
     counter = evaluate("labse")
     json.dump(counter, open("./labse_tatoeba.json", "w"))
 
-    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "fourth-model").to(device)
-    model.eval()
-    counter = evaluate("laro")
-    json.dump(counter, open("./laro_tatoeba.json", "w"))
+
 
 

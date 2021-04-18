@@ -284,3 +284,9 @@ class CustomTrainer(Trainer):
             loss = loss.mean().detach()
 
         return (loss, None, None)
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        _, x1, x2 = model(**inputs)
+
+        loss = cosine_embedding_loss(x1, x2)
+        return (loss, x1) if return_outputs else loss

@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 
 assert download_and_extract(path=os.environ.get("DATA_DIR", "./storage"))
 corpus = Corpus(downsampled=bool(int(os.environ.get("DOWNSAMPLE", 1))),
-                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 100)))
+                downsampled_count=int(os.environ.get("DOWNSAMPLE_COUNT", 1000)))
 corpus.load_corpus(debug=bool(int(os.environ.get("DEBUG", 1))), path=os.environ.get("DATA_DIR", "./storage"))
 
 
@@ -46,7 +46,7 @@ training_args = TrainingArguments(
     prediction_loss_only=True,
     report_to='wandb',  # enable logging to W&B
     run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test'),  # name of the W&B run (optional),
-    deepspeed=True
+    #sharded_ddp=True
 )
 
 trainer = CustomTrainer(

@@ -1,5 +1,6 @@
 import gzip
 import os
+import random
 import shutil
 import tarfile
 import traceback
@@ -104,7 +105,7 @@ class Corpus:
 
     def get_train(self, shuffled=False):
         if shuffled:
-            shuffle(self.train)
+            random.Random(3).shuffle(self.train)
         return self.train
 
     def get_source_target_filename(self, f1, f2):
@@ -248,8 +249,6 @@ class DataLoader(Dataset):
         return len(self.items)
 
     def __getitem__(self, idx):
-        if idx == 0:
-            shuffle(self.items)
         return self.items[idx]
 
 

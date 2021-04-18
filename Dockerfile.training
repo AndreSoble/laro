@@ -3,5 +3,5 @@ ADD ./modeling_laro.py /modeling_laro.py
 ADD ./train.py /train.py
 ADD ./train_utils.py /train_utils.py
 ADD ./run_tatoeba.py /run_tatoeba.py
-ENTRYPOINT ["python", "-m", "torch.distributed.launch", "--nproc_per_node=1", "/train.py"]
+ENTRYPOINT ["python", "-m", "torch.distributed.launch", "--nproc_per_node=5", "/train.py"]
 #ENTRYPOINT ["python","/train.py"]

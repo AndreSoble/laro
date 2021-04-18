@@ -15,7 +15,7 @@ from torch import cosine_similarity
 from torch.nn.functional import normalize
 from torch.nn.modules.loss import _Loss, CosineEmbeddingLoss
 from tqdm import tqdm
-from transformers import AutoTokenizer, Trainer
+from transformers import AutoTokenizer, Trainer, XLMRobertaTokenizerFast
 from pprint import pprint
 from torch.utils.data import Dataset
 
@@ -82,6 +82,9 @@ class SentencePair:
 
     def __str__(self):
         return self.src + " -- " + self.tgt
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Corpus:

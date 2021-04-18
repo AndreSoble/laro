@@ -1,3 +1,4 @@
+import json
 import os
 import traceback
 from pprint import pprint
@@ -81,20 +82,26 @@ def evaluate(model_mode):
         target_embeddings = embed_labse(target_sentences) if model_mode == "labse" else embed_laro(target_sentences)
         for index, sentence in enumerate(source_sentences):
             counter[tp_fp_eval(source_embeddings[index], target_embeddings, index)] += 1
-        lang_counter[files[i].split(".")[1]] = counter
+        lang_counter[files[i].split(".")[1]] = dict(counter)
         print("")
         pprint(lang_counter)
     print("#" * 100)
     pprint(lang_counter)
+    return lang_counter
 
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "fourth-model").to(device)
-    model.eval()
-    evaluate("laro")
 
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
     model = AutoModel.from_pretrained("sentence-transformers/LaBSE").to(device)
     model.eval()
-    evaluate("labse")
+    counter = evaluate("labse")
+    json.dump(counter, open("./labse_tatoeba.json", "w"))
+
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "fourth-model").to(device)
+    model.eval()
+    counter = evaluate("laro")
+    json.dump(counter, open("./laro_tatoeba.json", "w"))
+
+

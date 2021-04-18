@@ -90,7 +90,7 @@ class LARO(XLMRobertaModel):
         """
         encoder_outputs = super(LARO, self).forward(input_ids=input_ids,
                                                     attention_mask=attention_mask).pooler_output
-        return normalize(encoder_outputs)
+        return 10 * normalize(encoder_outputs)
 
 
 if __name__ == "__main__":

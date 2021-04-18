@@ -46,7 +46,7 @@ training_args = TrainingArguments(
     prediction_loss_only=True,
     report_to='wandb',  # enable logging to W&B
     run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test'),  # name of the W&B run (optional),
-    #sharded_ddp=True
+    sharded_ddp=True
 )
 
 trainer = CustomTrainer(

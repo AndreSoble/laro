@@ -67,7 +67,7 @@ class LARO(XLMRobertaModel):
             decoding (see :obj:`past_key_values`).decoder_input_ids=None,
                                   decoder_attention_mask=None,
         """
-        self.prepare_freezed_forward()
+        #self.prepare_freezed_forward()
 
         scaling_factor = 10
         #

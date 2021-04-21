@@ -39,7 +39,7 @@ pprint(corpus.get_data_counts())
 
 model = LARO.from_pretrained('xlm-roberta-base')
 
-model.prepare_freezed_forward()
+#model.prepare_freezed_forward()
 
 training_args = TrainingArguments(
     output_dir=os.environ.get("OUTPUT_DIR", './results'),  # output directory
@@ -53,7 +53,7 @@ training_args = TrainingArguments(
     learning_rate=float(os.environ.get("LR", 5e-5)),
     fp16=True,
     evaluation_strategy=EvaluationStrategy.STEPS,
-    save_total_limit=3,
+    save_total_limit=2,
     prediction_loss_only=True,
     report_to='wandb' if args.local_rank == 0 else None,  # enable logging to W&B
     run_name=os.environ.get("RUN_NAME", 'laro_training_fast_deepspeed_test') if args.local_rank == 0 else None,  # name of the W&B run (optional),

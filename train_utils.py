@@ -284,8 +284,15 @@ class CustomTrainer(Trainer):
 
         return (loss, None, None)
 
-    #def compute_loss(self, model, inputs, return_outputs=False):
-    #    _, x1, x2 = model(**inputs)
-#
-    #    loss = cosine_embedding_loss(x1, x2)
-    #    return (loss, x1) if return_outputs else loss
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """
+        How the loss is computed by Trainer. By default, all models return the loss in the first element.
+
+        Subclass and override for custom behavior.
+        """
+
+        outputs = model(**inputs)
+
+        loss = cosine_embedding_loss(outputs[0],outputs[1], m=0)
+
+        return (loss, outputs) if return_outputs else loss

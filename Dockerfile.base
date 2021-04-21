@@ -2,4 +2,4 @@ FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel
 RUN apt update -y && apt install g++ -y
 ADD ./requirements.txt /requirements.txt
 ADD ./v1 /v1
-RUN pip install -i https://download.pytorch.org/whl/torch_stable.html -r /requirements.txt
+RUN pip install -f https://download.pytorch.org/whl/torch_stable.html -r /requirements.txt

@@ -92,7 +92,7 @@ def evaluate(model_mode):
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "checkpoint-16000").to(device)
+    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "checkpoint-49000").to(device)
     model.eval()
     counter = evaluate("laro")
     json.dump(counter, open("./laro_tatoeba.json", "w"))

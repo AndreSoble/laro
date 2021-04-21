@@ -39,8 +39,6 @@ pprint(corpus.get_data_counts())
 
 model = LARO.from_pretrained('xlm-roberta-base')
 
-#model.prepare_freezed_forward()
-
 training_args = TrainingArguments(
     output_dir=os.environ.get("OUTPUT_DIR", './results'),  # output directory
     num_train_epochs=int(os.environ.get("EPOCHS", 1)),  # total # of training epochs

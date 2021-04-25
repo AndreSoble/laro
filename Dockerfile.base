@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
+#FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
 FROM deepspeed/deepspeed:latest-torch170-cuda110
 RUN apt update -y && apt install g++ -y
 ADD ./requirements.txt /requirements.txt

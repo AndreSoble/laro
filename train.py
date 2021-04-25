@@ -59,6 +59,7 @@ training_args = TrainingArguments(
     local_rank=args.local_rank
 )
 
+
 trainer = CustomTrainer(
     model=model,  # the instantiated 🤗 Transformers model to be trained
     args=training_args,  # training arguments, defined above

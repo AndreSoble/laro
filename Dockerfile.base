@@ -1,5 +1,5 @@
 FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
-#FROM huggingface/transformers-pytorch-gpu:4.4.2
+FROM deepspeed/deepspeed:latest-torch170-cuda110
 RUN apt update -y && apt install g++ -y
 ADD ./requirements.txt /requirements.txt
 ADD ./v1 /v1

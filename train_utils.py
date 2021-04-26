@@ -249,8 +249,6 @@ class DataLoader(Dataset):
         return len(self.items)
 
     def __getitem__(self, idx):
-        # if idx == 0:
-        #     random.Random(28).shuffle(self.items)
         return self.items[idx]
 
 

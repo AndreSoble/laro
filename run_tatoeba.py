@@ -9,6 +9,7 @@ import torch
 from torch import FloatTensor, cosine_similarity
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
+from laserembeddings import Laser
 
 from modeling_laro import LARO
 from train_utils import device
@@ -48,6 +49,19 @@ def embed_laro(sentences: List[str]):
 
 
 @torch.no_grad()
+def embed_laser(sentences: List[str]):
+    bs_size = int(os.environ.get("PER_DEVICE_EVAL_BATCH_SIZE", 40))
+    batches = [sentences[i:(i + bs_size)] for i in range(0, len(sentences), bs_size)]
+    print("Embedding using LARO")
+    all_embeddings = list()
+    for batch in batches:
+        embeddings = model.embed_sentences(batch, lang='en')
+        all_embeddings.append(torch.FloatTensor(embeddings))
+    all_embeddings = torch.cat(all_embeddings)
+    return all_embeddings
+
+
+@torch.no_grad()
 def tp_fp_eval(embedding: FloatTensor, embeddings: FloatTensor, index: int) -> str:
     """
     :param sentence:
@@ -78,8 +92,16 @@ def evaluate(model_mode):
         source_sentences = open("./v1/" + files[i], encoding="utf8").readlines()
         target_sentences = open("./v1/" + files[i + 1], encoding="utf8").readlines()
         counter = Counter()
-        source_embeddings = embed_labse(source_sentences) if model_mode == "labse" else embed_laro(source_sentences)
-        target_embeddings = embed_labse(target_sentences) if model_mode == "labse" else embed_laro(target_sentences)
+
+        if model_mode == "labse":
+            source_embeddings = embed_labse(source_sentences)
+            target_embeddings = embed_labse(target_sentences)
+        elif model_mode == "laser":
+            source_embeddings = embed_laser(source_sentences)
+            target_embeddings = embed_laser(target_sentences)
+        else:
+            source_embeddings = embed_laro(source_sentences)
+            target_embeddings = embed_laro(target_sentences)
         for index, sentence in enumerate(source_sentences):
             counter[tp_fp_eval(source_embeddings[index], target_embeddings, index)] += 1
         lang_counter[files[i].split(".")[1]] = dict(counter)
@@ -91,19 +113,21 @@ def evaluate(model_mode):
 
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "checkpoint-49000").to(device)
-    model.eval()
-    counter = evaluate("laro")
-    json.dump(counter, open("./laro_tatoeba.json", "w"))
+    os.system("python -m laserembeddings download-models")
+    model = Laser()
+    counter = evaluate("laser")
+    json.dump(counter, open("./laser_tatoeba.json", "w"))
 
-    exit()
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
     model = AutoModel.from_pretrained("sentence-transformers/LaBSE").to(device)
     model.eval()
     counter = evaluate("labse")
     json.dump(counter, open("./labse_tatoeba.json", "w"))
 
+    exit()
 
-
-
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+    model = LARO.from_pretrained(os.environ.get("OUTPUT_DIR", './results') + "/" + "checkpoint-49000").to(device)
+    model.eval()
+    counter = evaluate("laro")
+    json.dump(counter, open("./laro_tatoeba.json", "w"))

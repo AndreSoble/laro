@@ -70,6 +70,6 @@ if __name__ == '__main__':
         data_collator=data_collector
     )
 
-    output = trainer.train(resume_from_checkpoint= "/results/checkpoint-85000")
+    output = trainer.train()
     if args.local_rank == 0:
         wandb.finish()
